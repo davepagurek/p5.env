@@ -1,55 +1,12 @@
-let baseShader
+p5.disableFriendlyErrors = true
+
 let myShader
 
 function setup() {
   createCanvas(400, 400, WEBGL);
   
-  baseShader = new p5.Shader(
-    baseMaterialShader()._renderer,
-    baseMaterialShader()._vertSrc,
-    baseMaterialShader()._fragSrc,
-    {
-      declarations: 'vec3 n; vec3 r;',
-      vertex: {
-        ...baseMaterialShader().hooks.vertex,
-      },
-      fragment: {
-        'vec3 envColor': `(vec3 dir, float blur) { return vec3(0.); }`,
-        ...baseMaterialShader().hooks.fragment,
-        'Inputs getPixelInputs': `(Inputs inputs) {
-          n = inputs.normal * uCameraNormalMatrix;
-          vec3 lightDir = normalize(vViewPosition);
-          r = reflect(lightDir, inputs.normal) * uCameraNormalMatrix;
-          return inputs;
-        }`,
-        'vec4 combineColors': `(ColorComponents components) {
-          components.diffuse = HOOK_envColor(n, ${PI/2});
-          components.specular = pow(HOOK_envColor(r, ${PI/2}/(1. + 0.25 * uShininess)), vec3(10.));
-          // return vec4(components.specular, 1.);
-          vec4 color = vec4(0.);
-          color.rgb += components.diffuse * components.baseColor;
-          color.rgb += components.ambient * components.ambientColor;
-          color.rgb += components.specular * components.specularColor;
-          color.rgb += components.emissive;
-          // color.rgb = reinhard2(color.rgb);
-          color.a = components.opacity;
-          return color;
-        }`,
-      },
-      helpers: {
-        'vec3 reinhard2': `(vec3 x) {
-          const float L_white = 1.1;
-          return (x * (1.0 + x / (L_white * L_white))) / (1.0 + x);
-        }`,
-      },
-    }
-  )
-  // Run this to see the GLSL types you need to use:
-  baseShader.inspectHooks()
-  
-  myShader = baseShader.modify(() => {
+  myShader = buildEnvLightShader(() => {
     envColor.begin()
-    let d = envColor.blur
     let sky = uniformVec3(color('#CFE9F6'))
     let ground = uniformVec3(color('#CF7C5C'))
     
@@ -197,7 +154,7 @@ function setup() {
     envColor.set(c)
     envColor.end()
   })
-  console.log(myShader.fragSrc())
+  // console.log(myShader.fragSrc())
 }
 
 function draw() {
