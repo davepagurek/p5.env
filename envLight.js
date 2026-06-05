@@ -62,6 +62,21 @@ function envLight(p5, fn) {
     }
   }
 
+  fn.envCapsule = function(dir, a, b, radius) {
+    dir = p5.strandsNode(dir)
+    a = p5.strandsNode(a)
+    b = p5.strandsNode(b)
+    radius = p5.strandsNode(radius)
+
+    let ba = b.sub(a)
+    let h = this.clamp(this.dot(dir.sub(a), ba).div(this.dot(ba, ba)), 0, 1)
+    let closest = this.normalize(a.add(ba.mult(h)))
+    return {
+      distance: this.acos(this.dot(dir, closest)).sub(radius),
+      thickness: radius,
+    }
+  }
+
   fn.coords = function(dir, center) {
     dir = p5.strandsNode(dir)
     center = p5.strandsNode(center)
