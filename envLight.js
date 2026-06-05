@@ -21,7 +21,8 @@ function envLight(p5, fn) {
             }`,
             'vec4 combineColors': `(ColorComponents components) {
               components.diffuse = HOOK_envColor(n, ${PI/2});
-              components.specular = pow(HOOK_envColor(r, ${PI/2}/(1. + 0.25 * uShininess)), vec3(10.));
+              components.specular = HOOK_envColor(r, ${PI/2}/(1. + 0.25 * uShininess));
+              // components.specular = pow(HOOK_envColor(r, ${PI/2}/(1. + 0.25 * uShininess)), vec3(10.));
               // return vec4(components.specular, 1.);
               vec4 color = vec4(0.);
               color.rgb += components.diffuse * components.baseColor;
@@ -77,7 +78,7 @@ function envLight(p5, fn) {
     }
   }
 
-  fn.envNoise = function(dir, size, blur) {
+  fn.envNoise = function(dir, size, blur, offset) {
     // Adjust if p5's noise output is not centered exactly here
     const noiseMean = 0.5
 
@@ -104,6 +105,21 @@ function envLight(p5, fn) {
       .add(f2.mult(this.noise(p.mult(2)).sub(noiseMean)).mult(0.5))
       .add(f3.mult(this.noise(p.mult(4)).sub(noiseMean)).mult(0.25))
       .add(f4.mult(this.noise(p.mult(8)).sub(noiseMean)).mult(0.125))
+  }
+
+  fn.envNoisePlane = function(dir, planeNormal, h, size, blur, rotation = 0) {
+    planeNormal = p5.strandsNode(planeNormal)
+    rotation = p5.strandsNode(rotation)
+    h = p5.strandsNode(h)
+    let p = this.rotate2D(this.coords(dir, planeNormal), rotation.mult(-1))
+    let coord = h.mult(this.vec2(this.tan(p.x), this.tan(p.y)))
+    // let blurScale = h.div(this.pow(this.abs(this.dot(dir, planeNormal)), 1).add(0.001))
+    let blurScale = h.div(this.pow(this.dot(dir, planeNormal), 2).add(0.001))
+    return this.mix(
+      0.5,
+      this.envNoise(coord.add(1000), size, blur.mult(blurScale)),
+      this.abs(this.dot(dir, planeNormal))
+    )
   }
 
   fn.coords = function(dir, center) {
