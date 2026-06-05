@@ -34,7 +34,9 @@ function setup() {
 //       )
 //     }
 
-    c = mixEnv(envCircle(envColor.dir, [0, -1, 0], PI*0.5), sky, c, envColor.blur)
+    let cloudySky = mix(sky, vec3(1), envNoise(envColor.dir, 0.5, envColor.blur))
+    // c = mixEnv(envCircle(envColor.dir, [0, -1, 0], PI*0.5), sky, c, envColor.blur)
+    c = mixEnv(envCircle(envColor.dir, [0, -1, 0], PI*0.5), cloudySky, c, envColor.blur)
     // c = mixEnv(acos(dot(envColor.dir, [0, -1, 0])) - PI*0.5, PI*0.5, sky)
     
     c = mixEnv(envCircle(envColor.dir, normalize([-0.5, -1, 0.5]), PI*0.05), vec3(1.4), c, envColor.blur)

@@ -77,6 +77,35 @@ function envLight(p5, fn) {
     }
   }
 
+  fn.envNoise = function(dir, size, blur) {
+    // Adjust if p5's noise output is not centered exactly here
+    const noiseMean = 0.5
+
+    dir = p5.strandsNode(dir)
+    size = p5.strandsNode(size)
+    blur = p5.strandsNode(blur).mult(2)
+
+    // Single-octave raw noise so we can stack octaves ourselves
+    this.noiseDetail(1, 0.5)
+
+    let p = dir.div(size)
+    let blurRatio = blur.div(size)
+
+    // Each octave fades out when blur exceeds that octave's angular size
+    let f1 = this.max(0, p5.strandsNode(1).sub(blurRatio))
+    let f2 = this.max(0, p5.strandsNode(1).sub(blurRatio.mult(2)))
+    let f3 = this.max(0, p5.strandsNode(1).sub(blurRatio.mult(4)))
+    let f4 = this.max(0, p5.strandsNode(1).sub(blurRatio.mult(8)))
+
+    // Subtract the mean before weighting so blur only attenuates variation,
+    // not the average. Add the mean back once at the end.
+    return p5.strandsNode(noiseMean)
+      .add(f1.mult(this.noise(p).sub(noiseMean)))
+      .add(f2.mult(this.noise(p.mult(2)).sub(noiseMean)).mult(0.5))
+      .add(f3.mult(this.noise(p.mult(4)).sub(noiseMean)).mult(0.25))
+      .add(f4.mult(this.noise(p.mult(8)).sub(noiseMean)).mult(0.125))
+  }
+
   fn.coords = function(dir, center) {
     dir = p5.strandsNode(dir)
     center = p5.strandsNode(center)
