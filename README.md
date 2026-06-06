@@ -11,3 +11,31 @@ The solution I'm working with here is based on angular signed distance functions
 The angular SDFs here take in a surface normal and return two things:
 - **distance**: the distance in radians to the edge of a shape
 - **thickness**: the radius of the largest circle that can be inscribed within the shape
+
+## Builder API
+
+```js
+myShader = buildEnvLightShader(() => {
+  envColor.begin()
+  const l = envLight(baseColor, envColor.dir, envColor.blur)
+  l.mix(l.envCircle(...), lightColor)
+  envColor.set(l.get())
+  envColor.end()
+})
+```
+
+`envLight(baseColor, dir, blur)` creates a builder. `dir` and `blur` are captured once and used by all subsequent method calls.
+
+**Shape methods** (return an SDF result to pass to `mix`):
+- `l.envCircle(center, radius)` - spherical cap; `center` is a unit vec3, `radius` in radians
+- `l.envCapsule(a, b, radius)` - capsule between two unit vec3 endpoints, `radius` in radians
+- `l.envRect(center, size, rotation?)` - rectangle; `size` is `[halfWidth, halfHeight]` in radians, `rotation` in radians
+- `l.envWindow(center, size, panes, barWidth)` - rectangle subdivided into panes; `panes` is `[nx, ny]`, `barWidth` in radians
+
+**Color methods** (return a scalar/vec usable in `mix`):
+- `l.envNoise(size)` - blur-aware fractal noise value; `size` is the angular scale of the largest octave
+- `l.envNoisePlane(planeNormal, h, size, rotation?)` - projects a planar noise field onto the sphere; `h` is the plane's height, `size` is the noise scale
+
+**Builder methods**:
+- `l.mix(shape, color)` - blends `color` into the accumulated result using the shape's SDF; returns `l` for chaining
+- `l.get()` - returns the final accumulated color

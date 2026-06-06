@@ -229,6 +229,39 @@ function envLight(p5, fn) {
     mixAmt = mixAmt.mult(fade)
     return this.mix(c, materialColor, mixAmt)
   }
+
+  fn.envLight = function(baseColor, dir, blur) {
+    const sketch = this
+    let c = p5.strandsNode(baseColor)
+
+    return {
+      envCircle(center, radius) {
+        return sketch.envCircle(dir, center, radius)
+      },
+      envCapsule(a, b, radius) {
+        return sketch.envCapsule(dir, a, b, radius)
+      },
+      envRect(center, size, rotation) {
+        return sketch.envRect(dir, center, size, rotation)
+      },
+      envWindow(center, size, panes, barWidth) {
+        return sketch.envWindow(dir, center, size, panes, barWidth)
+      },
+      envNoise(size) {
+        return sketch.envNoise(dir, size, blur)
+      },
+      envNoisePlane(planeNormal, h, size, rotation) {
+        return sketch.envNoisePlane(dir, planeNormal, h, size, blur, rotation)
+      },
+      mix(shape, materialColor) {
+        c = sketch.mixEnv(shape, materialColor, c, blur)
+        return this
+      },
+      get() {
+        return c
+      }
+    }
+  }
 }
 
 if (typeof p5 !== 'undefined') {

@@ -10,26 +10,24 @@ function setup() {
     envColor.begin()
     let sky = uniformVec3(color('#CFE9F6'))
     let ground = uniformVec3(color('#996d5b'))
-    
-    let c = ground
 
-    let cloudySky = mix(sky, vec3(1), envNoisePlane(envColor.dir, [0, 1, 0], 0.1, 0.4, envColor.blur))
-    // c = mixEnv(envCircle(envColor.dir, [0, -1, 0], PI*0.5), sky, c, envColor.blur)
-    c = mixEnv(envCircle(envColor.dir, [0, -1, 0], PI*0.5), cloudySky, c, envColor.blur)
-    // c = mixEnv(acos(dot(envColor.dir, [0, -1, 0])) - PI*0.5, PI*0.5, sky)
-    
-    c = mixEnv(envCircle(envColor.dir, normalize([-0.5, -1, 0.5]), PI*0.05), vec3(1.4), c, envColor.blur)
-    
-    // c = mixEnv(envWindow(envColor.dir, normalize([1, -0.5, 0]), [PI*0.2, PI*0.35], [2, 2], PI*0.05), vec3(1.4), c, envColor.blur)
-    // c = mixEnv(envCapsule(envColor.dir, normalize([1, -0.5, 0]), normalize([1, 0.5, 0]), PI*0.05), vec3(1.4), c, envColor.blur)
-    
-    // c = mixEnv(envRect(envColor.dir, normalize([1, 0, 0]), [PI*0.05,PI*0.1]), vec3(1.4), c, envColor.blur)
-    // c = mixEnv(envRect(envColor.dir, normalize([1, 0, 0.3]), [PI*0.05,PI*0.1]), vec3(1.4), c, envColor.blur)
-    // c = mixEnv(envRect(envColor.dir, normalize([1, -0.5, 0]), [PI*0.05,PI*0.1]), vec3(1.4), c, envColor.blur)
-    // c = mixEnv(envRect(envColor.dir, normalize([1, -0.5, 0.3]), [PI*0.05,PI*0.1]), vec3(1.4), c, envColor.blur)
-    // c = mixEnv(acos(dot(envColor.dir, normalize([0.5, -1, 0.5]))) - PI*0.05, PI*0.05, [1, 1, 1] * 1.4)
-    
-    envColor.set(c)
+    let l = envLight(ground, envColor.dir, envColor.blur)
+
+    let cloudySky = mix(sky, vec3(1), l.envNoisePlane([0, 1, 0], 0.1, 0.4))
+    // l.mix(l.envCircle([0, -1, 0], PI*0.5), sky)
+    l.mix(l.envCircle([0, -1, 0], PI*0.5), cloudySky)
+
+    l.mix(l.envCircle(normalize([-0.5, -1, 0.5]), PI*0.05), vec3(1.4))
+
+    // l.mix(l.envWindow(normalize([1, -0.5, 0]), [PI*0.2, PI*0.35], [2, 2], PI*0.05), vec3(1.4))
+    // l.mix(l.envCapsule(normalize([1, -0.5, 0]), normalize([1, 0.5, 0]), PI*0.05), vec3(1.4))
+
+    // l.mix(l.envRect(normalize([1, 0, 0]), [PI*0.05,PI*0.1]), vec3(1.4))
+    // l.mix(l.envRect(normalize([1, 0, 0.3]), [PI*0.05,PI*0.1]), vec3(1.4))
+    // l.mix(l.envRect(normalize([1, -0.5, 0]), [PI*0.05,PI*0.1]), vec3(1.4))
+    // l.mix(l.envRect(normalize([1, -0.5, 0.3]), [PI*0.05,PI*0.1]), vec3(1.4))
+
+    envColor.set(l.get())
     envColor.end()
   })
   // console.log(myShader.fragSrc())
