@@ -122,6 +122,54 @@ function envLight(p5, fn) {
     )
   }
 
+  fn.envStar = function(dir, center, n, innerRadius, outerRadius, rotation = 0) {
+    dir = p5.strandsNode(dir)
+    center = p5.strandsNode(center)
+    innerRadius = p5.strandsNode(innerRadius)
+    outerRadius = p5.strandsNode(outerRadius)
+    rotation = p5.strandsNode(rotation)
+
+    // Build the local frame directly to avoid going through coords(), which
+    // uses atan(dot(dir,x), dot(dir,center)). Feeding that output into another
+    // atan() for the azimuthal angle creates a double-atan that collapses to
+    // four conic-gradient sectors far from the center
+    let up = this.abs(center.y) < 0.99
+      ? this.vec3(0, 1, 0)
+      : this.vec3(1, 0, 0)
+    let xLocal = this.normalize(this.cross(up, center))
+    let yLocal = this.cross(center, xLocal)
+
+    const an = Math.PI / n
+
+    // True angular distance from center -- same units as innerRadius/outerRadius
+    let r = this.acos(this.clamp(this.dot(dir, center), -1, 1))
+
+    // Azimuthal angle via a single atan on raw dot products.
+    // The atan discontinuity at +-PI is harmless: mod(PI, 2an) == mod(-PI, 2an)
+    let a = this.mod(
+      this.atan(this.dot(dir, yLocal), this.dot(dir, xLocal)).sub(rotation),
+      2 * an
+    )
+    let aFolded = this.min(a, p5.strandsNode(2 * an).sub(a))
+    let q = r.mult(this.vec2(this.cos(aFolded), this.sin(aFolded)))
+
+    // Edge from outer tip to inner valley
+    let tip = this.vec2(outerRadius, 0)
+    let valley = this.vec2(innerRadius.mult(Math.cos(an)), innerRadius.mult(Math.sin(an)))
+    let edge = valley.sub(tip)
+
+    // Signed distance: negative inside the star
+    let h = this.clamp(this.dot(q.sub(tip), edge).div(this.dot(edge, edge)), 0, 1)
+    let d = this.length(q.sub(tip.add(edge.mult(h))))
+    let cross2D = edge.x.mult(q.y).sub(edge.y.mult(q.x.sub(outerRadius)))
+    d = d.mult(this.sign(cross2D.mult(-1)))
+
+    return {
+      distance: d,
+      thickness: innerRadius,
+    }
+  }
+
   fn.coords = function(dir, center) {
     dir = p5.strandsNode(dir)
     center = p5.strandsNode(center)
@@ -240,6 +288,9 @@ function envLight(p5, fn) {
       },
       envCapsule(a, b, radius) {
         return sketch.envCapsule(dir, a, b, radius)
+      },
+      envStar(center, n, innerRadius, outerRadius, rotation) {
+        return sketch.envStar(dir, center, n, innerRadius, outerRadius, rotation)
       },
       envRect(center, size, rotation) {
         return sketch.envRect(dir, center, size, rotation)

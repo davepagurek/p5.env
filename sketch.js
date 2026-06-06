@@ -19,7 +19,8 @@ function setup() {
 
     l.mix(l.envCircle(normalize([-0.5, -1, 0.5]), PI*0.05), vec3(1.4))
 
-    // l.mix(l.envWindow(normalize([1, -0.5, 0]), [PI*0.2, PI*0.35], [2, 2], PI*0.05), vec3(1.4))
+    l.mix(l.envWindow(normalize([1, -0.5, 0]), [PI*0.2, PI*0.35], [2, 2], PI*0.05), vec3(1.4))
+    l.mix(l.envStar(normalize([-1, -0.5, 0]), 5, PI*0.05, PI*0.1, millis()*0.001), vec3(1.4))
     // l.mix(l.envCapsule(normalize([1, -0.5, 0]), normalize([1, 0.5, 0]), PI*0.05), vec3(1.4))
 
     // l.mix(l.envRect(normalize([1, 0, 0]), [PI*0.05,PI*0.1]), vec3(1.4))

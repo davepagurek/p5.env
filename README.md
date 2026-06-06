@@ -29,6 +29,7 @@ myShader = buildEnvLightShader(() => {
 **Shape methods** (return an SDF result to pass to `mix`):
 - `l.envCircle(center, radius)` - spherical cap; `center` is a unit vec3, `radius` in radians
 - `l.envCapsule(a, b, radius)` - capsule between two unit vec3 endpoints, `radius` in radians
+- `l.envStar(center, n, innerRadius, outerRadius, rotation?)` - n-pointed star; radii in radians, `n` is a plain JS integer
 - `l.envRect(center, size, rotation?)` - rectangle; `size` is `[halfWidth, halfHeight]` in radians, `rotation` in radians
 - `l.envWindow(center, size, panes, barWidth)` - rectangle subdivided into panes; `panes` is `[nx, ny]`, `barWidth` in radians
 
