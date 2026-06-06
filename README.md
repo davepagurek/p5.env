@@ -35,7 +35,7 @@ myShader = buildEnvLightShader(() => {
 
 **Color methods** (return a scalar/vec usable in `mix`):
 - `l.envNoise(size)` - blur-aware fractal noise value; `size` is the angular scale of the largest octave
-- `l.envNoisePlane(planeNormal, h, size, rotation?)` - projects a planar noise field onto the sphere; `h` is the plane's height, `size` is the noise scale
+- `l.envNoisePlane(planeNormal, h, size, { rotation?, offset? })` - projects a planar noise field onto the sphere; `h` is the plane's height, `size` is the noise scale; `offset` is a vec2 that shifts the noise coordinate (use for animation)
 
 **Builder methods**:
 - `l.mix(shape, color)` - blends `color` into the accumulated result using the shape's SDF; returns `l` for chaining

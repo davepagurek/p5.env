@@ -13,7 +13,8 @@ function setup() {
 
     let l = envLight(ground, envColor.dir, envColor.blur)
 
-    let cloudySky = mix(sky * 0.5, vec3(1), l.envNoisePlane([0, 1, 0], 0.5, 0.4))
+    let t = millis() * 0.00005
+    let cloudySky = mix(sky * 0.5, vec3(1), l.envNoisePlane([0, 1, 0], 0.5, 0.4, { offset: [t, t * 0.4] }))
     // l.mix(l.envCircle([0, -1, 0], PI*0.5), sky)
     l.mix(l.envCircle([0, -1, 0], PI*0.5), cloudySky)
 

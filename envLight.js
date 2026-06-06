@@ -78,18 +78,22 @@ function envLight(p5, fn) {
     }
   }
 
-  fn.envNoise = function(dir, size, blur, offset) {
+  fn.envNoise = function(dir, size, blur, offset = [0, 0]) {
     // Adjust if p5's noise output is not centered exactly here
     const noiseMean = 0.5
 
     dir = p5.strandsNode(dir)
     size = p5.strandsNode(size)
     blur = p5.strandsNode(blur).mult(2)
+    offset = p5.strandsNode(offset)
 
     // Single-octave raw noise so we can stack octaves ourselves
     this.noiseDetail(1, 0.5)
 
-    let p = dir.div(size)
+    // Adding offset before dividing by size means all octaves drift at the
+    // same world-space rate (higher-frequency octaves get a proportionally
+    // larger offset in their normalized coordinate space).
+    let p = dir.add(offset).div(size)
     let blurRatio = blur.div(size)
 
     // Each octave fades out when blur exceeds that octave's angular size
@@ -107,7 +111,7 @@ function envLight(p5, fn) {
       .add(f4.mult(this.noise(p.mult(8)).sub(noiseMean)).mult(0.125))
   }
 
-  fn.envNoisePlane = function(dir, planeNormal, h, size, blur, rotation = 0) {
+  fn.envNoisePlane = function(dir, planeNormal, h, size, blur, { rotation = 0, offset = [0, 0] } = {}) {
     dir = p5.strandsNode(dir)
     planeNormal = p5.strandsNode(planeNormal)
     rotation = p5.strandsNode(rotation)
@@ -131,11 +135,13 @@ function envLight(p5, fn) {
     let invPn = h.div(pn.add(0.001))
     let coord = this.vec2(rpx.mult(invPn), rpy.mult(invPn))
 
-    let blurScale = h.div(this.pow(pn, 2).add(0.001))
+    // let blurScale = h.div(this.pow(pn, 2).add(0.001))
+    // let blurScale = h.div(this.abs(pn).add(0.001))
+    let blurScale = h.div(this.pow(this.abs(pn), 1.5).add(0.001))
     return this.mix(
       0.5,
-      this.envNoise(coord.add(1000), size, blur.mult(blurScale)),
-      this.abs(pn)
+      this.envNoise(coord.add(1000), size, blur.mult(blurScale), offset),
+      this.abs(pn) // Hack for smoother transition
     )
   }
 
@@ -326,8 +332,8 @@ function envLight(p5, fn) {
       envNoise(size) {
         return sketch.envNoise(dir, size, blur)
       },
-      envNoisePlane(planeNormal, h, size, rotation) {
-        return sketch.envNoisePlane(dir, planeNormal, h, size, blur, rotation)
+      envNoisePlane(planeNormal, h, size, { rotation = 0, offset = [0, 0] } = {}) {
+        return sketch.envNoisePlane(dir, planeNormal, h, size, blur, { rotation, offset })
       },
       mix(shape, materialColor) {
         c = sketch.mixEnv(shape, materialColor, c, blur)
