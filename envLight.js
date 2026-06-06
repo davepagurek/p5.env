@@ -108,17 +108,34 @@ function envLight(p5, fn) {
   }
 
   fn.envNoisePlane = function(dir, planeNormal, h, size, blur, rotation = 0) {
+    dir = p5.strandsNode(dir)
     planeNormal = p5.strandsNode(planeNormal)
     rotation = p5.strandsNode(rotation)
     h = p5.strandsNode(h)
-    let p = this.rotate2D(this.coords(dir, planeNormal), rotation.mult(-1))
-    let coord = h.mult(this.vec2(this.tan(p.x), this.tan(p.y)))
-    // let blurScale = h.div(this.pow(this.abs(this.dot(dir, planeNormal)), 1).add(0.001))
-    let blurScale = h.div(this.pow(this.dot(dir, planeNormal), 2).add(0.001))
+
+    let up = this.abs(planeNormal.y) < 0.99
+      ? this.vec3(0, 1, 0)
+      : this.vec3(1, 0, 0)
+    let xLocal = this.normalize(this.cross(up, planeNormal))
+    let yLocal = this.cross(planeNormal, xLocal)
+
+    let pn = this.dot(dir, planeNormal)
+    let px = this.dot(dir, xLocal)
+    let py = this.dot(dir, yLocal)
+
+    // Rotate in chord space, then perspective-project onto the plane (x/n).
+    let cosR = this.cos(rotation)
+    let sinR = this.sin(rotation)
+    let rpx = cosR.mult(px).add(sinR.mult(py))
+    let rpy = cosR.mult(py).sub(sinR.mult(px))
+    let invPn = h.div(pn.add(0.001))
+    let coord = this.vec2(rpx.mult(invPn), rpy.mult(invPn))
+
+    let blurScale = h.div(this.pow(pn, 2).add(0.001))
     return this.mix(
       0.5,
       this.envNoise(coord.add(1000), size, blur.mult(blurScale)),
-      this.abs(this.dot(dir, planeNormal))
+      this.abs(pn)
     )
   }
 
@@ -129,10 +146,6 @@ function envLight(p5, fn) {
     outerRadius = p5.strandsNode(outerRadius)
     rotation = p5.strandsNode(rotation)
 
-    // Build the local frame directly to avoid going through coords(), which
-    // uses atan(dot(dir,x), dot(dir,center)). Feeding that output into another
-    // atan() for the azimuthal angle creates a double-atan that collapses to
-    // four conic-gradient sectors far from the center
     let up = this.abs(center.y) < 0.99
       ? this.vec3(0, 1, 0)
       : this.vec3(1, 0, 0)
@@ -170,23 +183,6 @@ function envLight(p5, fn) {
     }
   }
 
-  fn.coords = function(dir, center) {
-    dir = p5.strandsNode(dir)
-    center = p5.strandsNode(center)
-
-    let up = this.abs(center.y) < 0.99
-      ? this.vec3(0,1,0)
-      : this.vec3(1,0,0)
-
-    let x = this.normalize(this.cross(up, center))
-    let y = this.cross(center, x)
-
-    return this.vec2(
-      this.atan(this.dot(dir, x), this.dot(dir, center)),
-      this.atan(this.dot(dir, y), this.dot(dir, center))
-    )
-  }
-
   fn.rotate2D = function(p, angle) {
     p = p5.strandsNode(p)
     angle = p5.strandsNode(angle)
@@ -206,11 +202,31 @@ function envLight(p5, fn) {
     size = p5.strandsNode(size)
     rotation = p5.strandsNode(rotation)
 
-    let p = this.rotate2D(this.coords(dir, center), rotation.mult(-1))
+    let up = this.abs(center.y) < 0.99
+      ? this.vec3(0, 1, 0)
+      : this.vec3(1, 0, 0)
+    let xLocal = this.normalize(this.cross(up, center))
+    let yLocal = this.cross(center, xLocal)
+
+    // Raw dot-product coordinates in chord space (sin of angle, not radians).
+    let px = this.dot(dir, xLocal)
+    let py = this.dot(dir, yLocal)
+
+    let cosR = this.cos(rotation)
+    let sinR = this.sin(rotation)
+    let rpx = cosR.mult(px).add(sinR.mult(py))
+    let rpy = cosR.mult(py).sub(sinR.mult(px))
+
     let half = size.mult(0.5)
-    let q = this.abs(p).sub(half)
+    let q = this.abs(this.vec2(rpx, rpy)).sub(half)
+    let d = this.length(this.max(q, 0)).add(this.min(this.max(q.x, q.y), 0))
+
+    // Clip to front hemisphere to prevent a false rect at the antipodal point.
+    let hemiD = this.acos(this.clamp(this.dot(dir, center), -1, 1)).sub(Math.PI / 2)
+    d = this.max(d, hemiD)
+
     return {
-      distance: this.length(this.max(q, 0)).add(this.min(this.max(q.x, q.y), 0)),
+      distance: d,
       thickness: this.min(half.x, half.y),
     }
   }
@@ -222,20 +238,23 @@ function envLight(p5, fn) {
     panes = p5.strandsNode(panes)
     barWidth = p5.strandsNode(barWidth)
 
-    let p = this.coords(dir, center)
+    let up = this.abs(center.y) < 0.99
+      ? this.vec3(0, 1, 0)
+      : this.vec3(1, 0, 0)
+    let xLocal = this.normalize(this.cross(up, center))
+    let yLocal = this.cross(center, xLocal)
+
+    // Raw dot-product coordinates in chord space (sin of angle, not radians).
+    let p = this.vec2(this.dot(dir, xLocal), this.dot(dir, yLocal))
 
     let half = size.mult(0.5)
 
     let q = this.abs(p).sub(half)
     let outerD = this.length(this.max(q, 0)).add(this.min(this.max(q.x, q.y), 0))
 
-    // number of cuts
-    let nx = panes.x.sub(2)
-    let ny = panes.y.sub(2)
-
     let cell = this.vec2(
-      size.x.div(nx.add(1)),
-      size.y.div(ny.add(1))
+      size.x.div(panes.x.sub(1)),
+      size.y.div(panes.y.sub(1))
     )
 
     // position in grid space
@@ -252,6 +271,12 @@ function envLight(p5, fn) {
 
     // final SDF: window clipped, then subtract bars
     let d = this.max(outerD, barLocal.mult(-1))
+
+    // Clip to front hemisphere. Back-hemisphere directions also produce small
+    // chord coordinates and would create a false window at the antipodal point
+    // without this
+    let hemiD = this.acos(this.clamp(this.dot(dir, center), -1, 1)).sub(Math.PI / 2)
+    d = this.max(d, hemiD)
 
     // thickness = size of a single pane (not full window!)
     let paneSize = this.vec2(
