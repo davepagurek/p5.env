@@ -22,22 +22,13 @@ function envLight(p5, fn) {
             'vec4 combineColors': `(ColorComponents components) {
               components.diffuse = HOOK_envColor(n, ${PI/2});
               components.specular = HOOK_envColor(r, ${PI/2}/(1. + 0.25 * uShininess));
-              // components.specular = pow(HOOK_envColor(r, ${PI/2}/(1. + 0.25 * uShininess)), vec3(10.));
-              // return vec4(components.specular, 1.);
               vec4 color = vec4(0.);
               color.rgb += components.diffuse * components.baseColor;
               color.rgb += components.ambient * components.ambientColor;
               color.rgb += components.specular * components.specularColor;
               color.rgb += components.emissive;
-              // color.rgb = reinhard2(color.rgb);
               color.a = components.opacity;
               return color;
-            }`,
-          },
-          helpers: {
-            'vec3 reinhard2': `(vec3 x) {
-              const float L_white = 1.1;
-              return (x * (1.0 + x / (L_white * L_white))) / (1.0 + x);
             }`,
           },
         }
@@ -48,6 +39,51 @@ function envLight(p5, fn) {
 
   fn.buildEnvLightShader = function(...args) {
     return this.baseEnvLightShader().modify(...args)
+  }
+
+  fn.baseEnvLightPanoramaShader = function() {
+    if (!this._baseEnvLightPanoramaShader) {
+      this._baseEnvLightPanoramaShader = new p5.Shader(
+        this.baseFilterShader()._renderer,
+        this.baseFilterShader()._vertSrc,
+        this.baseFilterShader()._fragSrc,
+        {
+          declarations: `
+            uniform float uFovY;
+            uniform float uAspect;
+            uniform mat3 uCameraRotation;
+            uniform float uBlur;
+          `,
+          fragment: {
+            'vec3 envColor': '(vec3 dir, float blur) { return vec3(0.); }',
+            ...this.baseFilterShader().hooks.fragment,
+            'vec4 getColor': `(FilterInputs inputs, sampler2D tex0) {
+              float fovX = uFovY * uAspect;
+              float angleY = mix(uFovY/2.0, -uFovY/2.0, inputs.texCoord.y);
+              float angleX = mix(fovX/2.0, -fovX/2.0, inputs.texCoord.x);
+              vec3 dir = uCameraRotation * normalize(vec3(angleX, angleY, 1.0));
+              return vec4(HOOK_envColor(-dir, uBlur), 1.0);
+            }`,
+          },
+        }
+      )
+    }
+    return this._baseEnvLightPanoramaShader
+  }
+
+  fn.buildEnvLightPanorama = function(...args) {
+    return this.baseEnvLightPanoramaShader().modify(...args)
+  }
+
+  fn.panoramaEnv = function(panoramaShader, blur = 0) {
+    const renderer = this._renderer
+    renderer.scratchMat3.inverseTranspose4x4(renderer.states.uViewMatrix)
+    renderer.scratchMat3.invert(renderer.scratchMat3)
+    panoramaShader.setUniform('uFovY', renderer.states.curCamera.cameraFOV)
+    panoramaShader.setUniform('uAspect', renderer.states.curCamera.aspectRatio)
+    panoramaShader.setUniform('uCameraRotation', renderer.scratchMat3.mat3)
+    panoramaShader.setUniform('uBlur', Math.min(blur, Math.PI / 2))
+    this.filter(panoramaShader)
   }
 
   // Color helpers
@@ -258,7 +294,7 @@ function envLight(p5, fn) {
     size = p5.strandsNode(size)
     rotation = p5.strandsNode(rotation)
 
-    let up = p5.strandsTernary(this.abs(center.y).lt(0.99), this.vec3(0, 1, 0), this.vec3(1, 0, 0))
+    let up = p5.strandsTernary(this.abs(center.y).lessThan(0.99), this.vec3(0, 1, 0), this.vec3(1, 0, 0))
     let xLocal = this.normalize(this.cross(up, center))
     let yLocal = this.cross(center, xLocal)
 
@@ -292,7 +328,7 @@ function envLight(p5, fn) {
     panes = p5.strandsNode(panes)
     barWidth = p5.strandsNode(barWidth)
 
-    let up = p5.strandsTernary(this.abs(center.y).lt(0.99), this.vec3(0, 1, 0), this.vec3(1, 0, 0))
+    let up = p5.strandsTernary(this.abs(center.y).lessThan(0.99), this.vec3(0, 1, 0), this.vec3(1, 0, 0))
     let xLocal = this.normalize(this.cross(up, center))
     let yLocal = this.cross(center, xLocal)
 
@@ -349,8 +385,12 @@ function envLight(p5, fn) {
 
     let d = result.distance
     let thickness = result.thickness
-    let mixAmt = this.map(d.sub(blur.div(2)), blur.mult(-1), blur, 1, 0, true)
-    let fade = 1 // this.min(1, thickness.div(blur))
+    let mixAmt = p5.strandsTernary(
+      blur.equalTo(0),
+      this.step(0, d.mult(-1)),
+      this.map(d.sub(blur.div(2)), blur.mult(-1), blur, 1, 0, true)
+    )
+    let fade = this.min(1, thickness.div(blur))
     mixAmt = mixAmt.mult(fade)
     return this.mix(c, materialColor, mixAmt)
   }

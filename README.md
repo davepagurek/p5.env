@@ -41,3 +41,31 @@ myShader = buildEnvLightShader(() => {
 **Builder methods**:
 - `l.mix(shape, color)` - blends `color` into the accumulated result using the shape's SDF; returns `l` for chaining
 - `l.get()` - returns the final accumulated color
+
+## Panorama
+
+The same `envColor` hook can also be used to create a version of `panorama()` but using your generative environment, `panoramaEnv`.
+
+```js
+function envHooks() {
+  envColor.begin()
+  // Draw something here!
+  envColor.end()
+}
+
+let envShader, panoramaShader
+
+function setup() {
+  envShader = buildEnvLightShader(envHooks)
+  panoramaShader = buildEnvLightPanorama(envHooks)
+}
+
+function draw() {
+  clear()
+  panoramaEnv(panoramaShader)
+  shader(envShader)
+  sphere(150)
+}
+```
+
+The API is `panoramaEnv(shader, blur = 0)`. Pass a nonzero `blur` (in radians) to draw a blurry background instead of a default clear one.
