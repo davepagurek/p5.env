@@ -50,6 +50,60 @@ function envLight(p5, fn) {
     return this.baseEnvLightShader().modify(...args)
   }
 
+  // Color helpers
+
+  fn.envGradient = function(dir, center, blur, ...stops) {
+    dir = p5.strandsNode(dir)
+    center = p5.strandsNode(center)
+    blur = p5.strandsNode(blur)
+
+    for (const stop of stops) {
+      stop.t = p5.strandsNode(stop.t)
+      stop.color = p5.strandsNode(stop.color)
+    }
+
+    let r = this.acos(this.clamp(this.dot(dir, center), -1, 1))
+
+    // Clamp window to [0, PI] and ensure nonzero width so blur=0 stays safe
+    let safeBlur = this.max(blur, 0.0001)
+    let a = this.max(0, r.sub(safeBlur))
+    let b = this.min(Math.PI, r.add(safeBlur))
+
+    let totalWeight = p5.strandsNode(0)
+    let weightedColor = this.vec3(0, 0, 0)
+
+    // Region before first stop: extend with its color
+    let beforeOverlap = this.max(0, this.min(b, stops[0].t).sub(a))
+    weightedColor = weightedColor.add(p5.strandsNode(stops[0].color).mult(beforeOverlap))
+    totalWeight = totalWeight.add(beforeOverlap)
+
+    // Each linear segment: integrate over the blur window overlap
+    for (let i = 0; i < stops.length - 1; i++) {
+      const t0 = stops[i].t
+      const t1 = stops[i + 1].t
+      let segLo = this.max(a, t0)
+      let segHi = this.min(b, t1)
+      let segOverlap = this.max(0, segHi.sub(segLo))
+      // Average lerp factor across the overlap is (f_lo + f_hi) / 2
+      let segF0 = this.clamp(segLo.sub(t0).div(t1.sub(t0)), 0, 1)
+      let segF1 = this.clamp(segHi.sub(t0).div(t1.sub(t0)), 0, 1)
+      let segColor = this.mix(
+        stops[i].color,
+        stops[i + 1].color,
+        segF0.add(segF1).div(2)
+      )
+      weightedColor = weightedColor.add(segColor.mult(segOverlap))
+      totalWeight = totalWeight.add(segOverlap)
+    }
+
+    // Region after last stop: extend with its color
+    let afterOverlap = this.max(0, b.sub(this.max(a, stops[stops.length - 1].t)))
+    weightedColor = weightedColor.add(p5.strandsNode(stops[stops.length - 1].color).mult(afterOverlap))
+    totalWeight = totalWeight.add(afterOverlap)
+
+    return weightedColor.div(totalWeight)
+  }
+
   // Shape helpers
 
   fn.envCircle = function(dir, center, radius) {
@@ -304,7 +358,7 @@ function envLight(p5, fn) {
     let d = result.distance
     let thickness = result.thickness
     let mixAmt = this.map(d.sub(blur.div(2)), blur.mult(-1), blur, 1, 0, true)
-    let fade = this.min(1, thickness.div(blur))
+    let fade = 1 // this.min(1, thickness.div(blur))
     mixAmt = mixAmt.mult(fade)
     return this.mix(c, materialColor, mixAmt)
   }
@@ -331,6 +385,9 @@ function envLight(p5, fn) {
       },
       envNoise(size) {
         return sketch.envNoise(dir, size, blur)
+      },
+      envGradient(center, ...stops) {
+        return sketch.envGradient(dir, center, blur, ...stops)
       },
       envNoisePlane(planeNormal, h, size, { rotation = 0, offset = [0, 0] } = {}) {
         return sketch.envNoisePlane(dir, planeNormal, h, size, blur, { rotation, offset })

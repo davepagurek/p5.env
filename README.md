@@ -33,7 +33,8 @@ myShader = buildEnvLightShader(() => {
 - `l.envRect(center, size, rotation?)` - rectangle; `size` is `[halfWidth, halfHeight]` as chord lengths (sine of angle, not radians), `rotation` in radians
 - `l.envWindow(center, size, panes, barWidth)` - rectangle subdivided into panes; `panes` is `[nx, ny]`; `size` and `barWidth` are chord lengths (sine of angle, not radians — for small shapes the difference is negligible)
 
-**Color methods** (return a scalar/vec usable in `mix`):
+**Color methods** (return a scalar/vec3 usable in expressions or as a base color):
+- `l.envGradient(center, ...stops)` - radial gradient; each stop is `{ t, color }` where `t` is angle from `center` in radians and `color` is a vec3; spread stops as individual arguments
 - `l.envNoise(size)` - blur-aware fractal noise value; `size` is the angular scale of the largest octave
 - `l.envNoisePlane(planeNormal, h, size, { rotation?, offset? })` - projects a planar noise field onto the sphere; `h` is the plane's height, `size` is the noise scale; `offset` is a vec2 that shifts the noise coordinate (use for animation)
 
