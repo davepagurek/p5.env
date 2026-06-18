@@ -171,9 +171,7 @@ function envLight(p5, fn) {
     rotation = p5.strandsNode(rotation)
     h = p5.strandsNode(h)
 
-    let up = this.abs(planeNormal.y) < 0.99
-      ? this.vec3(0, 1, 0)
-      : this.vec3(1, 0, 0)
+    let up = p5.strandsTernary(this.abs(planeNormal.y).lt(0.99), this.vec3(0, 1, 0), this.vec3(1, 0, 0))
     let xLocal = this.normalize(this.cross(up, planeNormal))
     let yLocal = this.cross(planeNormal, xLocal)
 
@@ -206,9 +204,7 @@ function envLight(p5, fn) {
     outerRadius = p5.strandsNode(outerRadius)
     rotation = p5.strandsNode(rotation)
 
-    let up = this.abs(center.y) < 0.99
-      ? this.vec3(0, 1, 0)
-      : this.vec3(1, 0, 0)
+    let up = p5.strandsTernary(this.abs(center.y).lt(0.99), this.vec3(0, 1, 0), this.vec3(1, 0, 0))
     let xLocal = this.normalize(this.cross(up, center))
     let yLocal = this.cross(center, xLocal)
 
@@ -262,9 +258,7 @@ function envLight(p5, fn) {
     size = p5.strandsNode(size)
     rotation = p5.strandsNode(rotation)
 
-    let up = this.abs(center.y) < 0.99
-      ? this.vec3(0, 1, 0)
-      : this.vec3(1, 0, 0)
+    let up = p5.strandsTernary(this.abs(center.y).lt(0.99), this.vec3(0, 1, 0), this.vec3(1, 0, 0))
     let xLocal = this.normalize(this.cross(up, center))
     let yLocal = this.cross(center, xLocal)
 
@@ -298,9 +292,7 @@ function envLight(p5, fn) {
     panes = p5.strandsNode(panes)
     barWidth = p5.strandsNode(barWidth)
 
-    let up = this.abs(center.y) < 0.99
-      ? this.vec3(0, 1, 0)
-      : this.vec3(1, 0, 0)
+    let up = p5.strandsTernary(this.abs(center.y).lt(0.99), this.vec3(0, 1, 0), this.vec3(1, 0, 0))
     let xLocal = this.normalize(this.cross(up, center))
     let yLocal = this.cross(center, xLocal)
 
