@@ -37,7 +37,7 @@ function envLight(p5, fn) {
     return this._baseEnvLightShader
   }
 
-  fn.buildEnvLightShader = function(...args) {
+  fn.buildEnvMaterial = function(...args) {
     return this.baseEnvLightShader().modify(...args)
   }
 
@@ -71,19 +71,18 @@ function envLight(p5, fn) {
     return this._baseEnvLightPanoramaShader
   }
 
-  fn.buildEnvLightPanorama = function(...args) {
-    return this.baseEnvLightPanoramaShader().modify(...args)
-  }
-
-  fn.panoramaEnv = function(panoramaShader, blur = 0) {
-    const renderer = this._renderer
-    renderer.scratchMat3.inverseTranspose4x4(renderer.states.uViewMatrix)
-    renderer.scratchMat3.invert(renderer.scratchMat3)
-    panoramaShader.setUniform('uFovY', renderer.states.curCamera.cameraFOV)
-    panoramaShader.setUniform('uAspect', renderer.states.curCamera.aspectRatio)
-    panoramaShader.setUniform('uCameraRotation', renderer.scratchMat3.mat3)
-    panoramaShader.setUniform('uBlur', Math.min(blur, Math.PI / 2))
-    this.filter(panoramaShader)
+  fn.buildEnvPanorama = function(...args) {
+    const panoramaShader = this.baseEnvLightPanoramaShader().modify(...args)
+    return (blur = 0) => {
+      const renderer = this._renderer
+      renderer.scratchMat3.inverseTranspose4x4(renderer.states.uViewMatrix)
+      renderer.scratchMat3.invert(renderer.scratchMat3)
+      panoramaShader.setUniform('uFovY', renderer.states.curCamera.cameraFOV)
+      panoramaShader.setUniform('uAspect', renderer.states.curCamera.aspectRatio)
+      panoramaShader.setUniform('uCameraRotation', renderer.scratchMat3.mat3)
+      panoramaShader.setUniform('uBlur', Math.min(blur, Math.PI / 2))
+      this.filter(panoramaShader)
+    }
   }
 
   // Color helpers
@@ -400,28 +399,28 @@ function envLight(p5, fn) {
     let c = p5.strandsNode(baseColor)
 
     return {
-      envCircle(center, radius) {
+      circle(center, radius) {
         return sketch.envCircle(dir, center, radius)
       },
-      envCapsule(a, b, radius) {
+      capsule(a, b, radius) {
         return sketch.envCapsule(dir, a, b, radius)
       },
-      envStar(center, n, innerRadius, outerRadius, rotation) {
+      star(center, n, innerRadius, outerRadius, rotation) {
         return sketch.envStar(dir, center, n, innerRadius, outerRadius, rotation)
       },
-      envRect(center, size, rotation) {
+      rect(center, size, rotation) {
         return sketch.envRect(dir, center, size, rotation)
       },
-      envWindow(center, size, panes, barWidth) {
+      window(center, size, panes, barWidth) {
         return sketch.envWindow(dir, center, size, panes, barWidth)
       },
-      envNoise(size) {
+      noise(size) {
         return sketch.envNoise(dir, size, blur)
       },
-      envGradient(center, ...stops) {
+      gradient(center, ...stops) {
         return sketch.envGradient(dir, center, blur, ...stops)
       },
-      envNoisePlane(planeNormal, h, size, { rotation = 0, offset = [0, 0] } = {}) {
+      noisePlane(planeNormal, h, size, { rotation = 0, offset = [0, 0] } = {}) {
         return sketch.envNoisePlane(dir, planeNormal, h, size, blur, { rotation, offset })
       },
       mix(shape, materialColor) {

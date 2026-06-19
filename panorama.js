@@ -1,7 +1,7 @@
 p5.disableFriendlyErrors = true
 
 let envShader
-let panoramaShader
+let pano
 
 function setup() {
   createCanvas(windowWidth, windowHeight, WEBGL)
@@ -23,20 +23,20 @@ function setup() {
       { t: PI * 0.55, color: horizonColor },
     )
     let l = envLight(sky, envColor.dir, envColor.blur)
-    l.mix(l.envCircle(sunDir, PI * 0.04), sunColor)
-    l.mix(l.envCircle([0, 1, 0], PI * 0.5), ground)
+    l.mix(l.circle(sunDir, PI * 0.04), sunColor)
+    l.mix(l.circle([0, 1, 0], PI * 0.5), ground)
     envColor.set(l.get())
     envColor.end()
   }
 
-  envShader = buildEnvLightShader(envHooks)
-  panoramaShader = buildEnvLightPanorama(envHooks)
+  envShader = buildEnvMaterial(envHooks)
+  pano = buildEnvPanorama(envHooks)
 }
 
 function draw() {
   background(255)
   orbitControl()
-  panoramaEnv(panoramaShader)
+  pano()
   noStroke()
   shader(envShader)
   fill(100)

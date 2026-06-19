@@ -15,10 +15,10 @@ The angular SDFs here take in a surface normal and return two things:
 ## Builder API
 
 ```js
-myShader = buildEnvLightShader(() => {
+myShader = buildEnvMaterial(() => {
   envColor.begin()
   const l = envLight(baseColor, envColor.dir, envColor.blur)
-  l.mix(l.envCircle(...), lightColor)
+  l.mix(l.circle(...), lightColor)
   envColor.set(l.get())
   envColor.end()
 })
@@ -27,16 +27,16 @@ myShader = buildEnvLightShader(() => {
 `envLight(baseColor, dir, blur)` creates a builder. `dir` and `blur` are captured once and used by all subsequent method calls.
 
 **Shape methods** (return an SDF result to pass to `mix`):
-- `l.envCircle(center, radius)` - spherical cap; `center` is a unit vec3, `radius` in radians
-- `l.envCapsule(a, b, radius)` - capsule between two unit vec3 endpoints, `radius` in radians
-- `l.envStar(center, n, innerRadius, outerRadius, rotation?)` - n-pointed star; radii in radians, `n` is a plain JS integer
-- `l.envRect(center, size, rotation?)` - rectangle; `size` is `[halfWidth, halfHeight]` as chord lengths (sine of angle, not radians), `rotation` in radians
-- `l.envWindow(center, size, panes, barWidth)` - rectangle subdivided into panes; `panes` is `[nx, ny]`; `size` and `barWidth` are chord lengths (sine of angle, not radians — for small shapes the difference is negligible)
+- `l.circle(center, radius)` - spherical cap; `center` is a unit vec3, `radius` in radians
+- `l.capsule(a, b, radius)` - capsule between two unit vec3 endpoints, `radius` in radians
+- `l.star(center, n, innerRadius, outerRadius, rotation?)` - n-pointed star; radii in radians, `n` is a plain JS integer
+- `l.rect(center, size, rotation?)` - rectangle; `size` is `[halfWidth, halfHeight]` as chord lengths (sine of angle, not radians), `rotation` in radians
+- `l.window(center, size, panes, barWidth)` - rectangle subdivided into panes; `panes` is `[nx, ny]`; `size` and `barWidth` are chord lengths (sine of angle, not radians -- for small shapes the difference is negligible)
 
 **Color methods** (return a scalar/vec3 usable in expressions or as a base color):
-- `l.envGradient(center, ...stops)` - radial gradient; each stop is `{ t, color }` where `t` is angle from `center` in radians and `color` is a vec3; spread stops as individual arguments
-- `l.envNoise(size)` - blur-aware fractal noise value; `size` is the angular scale of the largest octave
-- `l.envNoisePlane(planeNormal, h, size, { rotation?, offset? })` - projects a planar noise field onto the sphere; `h` is the plane's height, `size` is the noise scale; `offset` is a vec2 that shifts the noise coordinate (use for animation)
+- `l.gradient(center, ...stops)` - radial gradient; each stop is `{ t, color }` where `t` is angle from `center` in radians and `color` is a vec3; spread stops as individual arguments
+- `l.noise(size)` - blur-aware fractal noise value; `size` is the angular scale of the largest octave
+- `l.noisePlane(planeNormal, h, size, { rotation?, offset? })` - projects a planar noise field onto the sphere; `h` is the plane's height, `size` is the noise scale; `offset` is a vec2 that shifts the noise coordinate (use for animation)
 
 **Builder methods**:
 - `l.mix(shape, color)` - blends `color` into the accumulated result using the shape's SDF; returns `l` for chaining
@@ -44,28 +44,27 @@ myShader = buildEnvLightShader(() => {
 
 ## Panorama
 
-The same `envColor` hook can also be used to create a version of `panorama()` but using your generative environment, `panoramaEnv`.
+The same `envColor` hook can also drive a background panorama, so the environment visible on surfaces matches the environment visible in the background.
 
 ```js
-function envHooks() {
+const envHooks = () => {
   envColor.begin()
-  // Draw something here!
+  // ... same hook body as before ...
   envColor.end()
 }
 
-let envShader, panoramaShader
+let envShader, pano
 
 function setup() {
-  envShader = buildEnvLightShader(envHooks)
-  panoramaShader = buildEnvLightPanorama(envHooks)
+  envShader = buildEnvMaterial(envHooks)
+  pano = buildEnvPanorama(envHooks)
 }
 
 function draw() {
-  clear()
-  panoramaEnv(panoramaShader)
+  pano()
   shader(envShader)
   sphere(150)
 }
 ```
 
-The API is `panoramaEnv(shader, blur = 0)`. Pass a nonzero `blur` (in radians) to draw a blurry background instead of a default clear one.
+`buildEnvPanorama` returns a function. Calling it each frame sets the camera uniforms and applies the panorama as a post-process filter. Pass a blur value in radians to match a rough material's specular blur: `pano(blur)`.

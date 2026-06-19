@@ -5,7 +5,7 @@ let pano
 
 function setup() {
   createCanvas(windowWidth, windowHeight, WEBGL)
-  pixelDensity(1)
+  // pixelDensity(1)
 
   const env = () => {
     envColor.begin()
@@ -13,7 +13,7 @@ function setup() {
 
     // Sun orbits in the x-y plane. At angle 0 the sun is at the zenith [0,-1,0].
     let sunAngle =  PI * 0.45 // millis() * 0.0003
-    let sunDir = normalize(vec3(sin(sunAngle), cos(sunAngle) * -1, 0))
+    let sunDir = normalize(vec3(0.35, cos(sunAngle) * -1, -sin(sunAngle)))
     // 1 at noon, fades to 0 at the horizon, stays 0 through the night
     let daylight = map(dot(sunDir, [0, -1, 0]), -1, 1, 0, 1)
     ground *= map(daylight, 0.2, 0.6, 0, 1, true)
@@ -31,32 +31,32 @@ function setup() {
 
     // Sun is the base layer, sky goes on top, ground on top of both
     let l = envLight(sky, envColor.dir, envColor.blur)
-    l.mix(l.envCircle(sunDir, PI * 0.02), sunColor)
-    l.mix(l.envCircle([0, 1, 0], PI * 0.5), ground)
+    l.mix(l.circle(sunDir, PI * 0.02), sunColor)
+    l.mix(l.circle([0, 1, 0], PI * 0.5), ground)
 
-    // l.mix(l.envWindow(normalize([1, -0.5, 0]), [PI*0.2, PI*0.35], [2, 2], PI*0.05), vec3(1.4))
-    // l.mix(l.envStar(normalize([-1, -0.5, 0]), 5, PI*0.05, PI*0.1, millis()*0.001), vec3(1.4))
+    // l.mix(l.window(normalize([1, -0.5, 0]), [PI*0.2, PI*0.35], [2, 2], PI*0.05), vec3(1.4))
+    // l.mix(l.star(normalize([-1, -0.5, 0]), 5, PI*0.05, PI*0.1, millis()*0.001), vec3(1.4))
     // let t = millis() * 0.00005
-    // let cloudySky = mix(sky * 0.5, vec3(1), l.envNoisePlane([0, 1, 0], 0.5, 0.4, { offset: [t, t * 0.4] }))
+    // let cloudySky = mix(sky * 0.5, vec3(1), l.noisePlane([0, 1, 0], 0.5, 0.4, { offset: [t, t * 0.4] }))
 
-    // l.mix(l.envCapsule(normalize([1, -0.5, 0]), normalize([1, 0.5, 0]), PI*0.05), vec3(1.4))
-    // l.mix(l.envRect(normalize([1, 0, 0]), [PI*0.05,PI*0.1]), vec3(1.4))
-    // l.mix(l.envRect(normalize([1, 0, 0.3]), [PI*0.05,PI*0.1]), vec3(1.4))
-    // l.mix(l.envRect(normalize([1, -0.5, 0]), [PI*0.05,PI*0.1]), vec3(1.4))
-    // l.mix(l.envRect(normalize([1, -0.5, 0.3]), [PI*0.05,PI*0.1]), vec3(1.4))
+    // l.mix(l.capsule(normalize([1, -0.5, 0]), normalize([1, 0.5, 0]), PI*0.05), vec3(1.4))
+    // l.mix(l.rect(normalize([1, 0, 0]), [PI*0.05,PI*0.1]), vec3(1.4))
+    // l.mix(l.rect(normalize([1, 0, 0.3]), [PI*0.05,PI*0.1]), vec3(1.4))
+    // l.mix(l.rect(normalize([1, -0.5, 0]), [PI*0.05,PI*0.1]), vec3(1.4))
+    // l.mix(l.rect(normalize([1, -0.5, 0.3]), [PI*0.05,PI*0.1]), vec3(1.4))
 
     envColor.set(l.get())
     envColor.end()
   }
-  myShader = buildEnvLightShader(env)
-  pano = buildEnvLightPanorama(env)
+  myShader = buildEnvMaterial(env)
+  pano = buildEnvPanorama(env)
   console.log(myShader.fragSrc())
 }
 
 function draw() {
   background(255)
   orbitControl()
-  panoramaEnv(pano)
+  pano(PI * 0.01)
   scale(min(width / 600, height / 600))
   noStroke()
   shader(myShader)
