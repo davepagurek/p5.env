@@ -1,6 +1,6 @@
 {
   "name": "p5.env",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Generative environment light for p5.strands",
   "main": "p5.env.js",
   "scripts": {
