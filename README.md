@@ -9,13 +9,13 @@ This is an experiment around replacing image lighting in p5 with something that 
 Add it via a script tag:
 
 ```html
-<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/p5.env@0.0.3/p5.env.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/p5.env@0.0.4/p5.env.js"></script>
 ```
 
 Or for OpenProcessing, you can add it directly via CDN:
 
 ```
-https://cdn.jsdelivr.net/npm/p5.env@0.0.3/p5.env.js
+https://cdn.jsdelivr.net/npm/p5.env@0.0.4/p5.env.js
 ```
 
 ## Builder API

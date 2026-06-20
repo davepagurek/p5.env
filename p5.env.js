@@ -1,4 +1,4 @@
-function envLight(p5, fn) {
+function env(p5, fn) {
   fn.baseEnvLightShader = function() {
     if (!this._baseEnvLightShader) {
       this._baseEnvLightShader = new p5.Shader(
@@ -435,5 +435,5 @@ function envLight(p5, fn) {
 }
 
 if (typeof p5 !== 'undefined') {
-  p5.registerAddon(envLight)
+  p5.registerAddon(env)
 }
